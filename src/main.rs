@@ -1,3 +1,5 @@
+use std::fmt;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Tile {
     Empty,
@@ -92,6 +94,22 @@ impl Puzzle {
     }
 }
 
+impl fmt::Display for Puzzle {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for row in 0..SIZE {
+            for col in 0..SIZE {
+                let _ = match self.grid[row][col] {
+                    Tile::Number(x) => write!(f, "{x:2}  "),
+                    Tile::Empty => write!(f, "<>  ")
+                };
+            }
+            let _ = write!(f, "\n");
+        }
+
+        Ok(())
+    }
+}
+
 fn main() {
     let mut p: Puzzle = Puzzle::new();
     if p.is_solved() {
@@ -107,9 +125,10 @@ fn main() {
     ];
     for d in dirs {
         let slid = p.slide(d);
+        println!("{:?}", d);
         println!("slid? {slid}");
         let solved = p.is_solved();
         println!("solved? {solved}");
-        println!("{:?}", p);
+        println!("{p}");
     }
 }
