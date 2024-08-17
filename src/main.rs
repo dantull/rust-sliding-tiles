@@ -1,4 +1,5 @@
 use std::fmt;
+use rand::Rng;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Tile {
@@ -38,6 +39,25 @@ impl Puzzle {
         Puzzle { grid, empty_pos }
     }
 
+    fn scramble(&mut self) -> () {
+        let mut rng = rand::thread_rng();
+
+        for row in 0..SIZE {
+            for col in 0..SIZE {
+                let r: usize = rng.gen::<usize>() % SIZE;
+                let c: usize = rng.gen::<usize>() % SIZE;
+
+                self.swap((row, col), (r, c));
+
+                if self.grid[row][col] == Tile::Empty {
+                    self.empty_pos = (row, col);
+                } else if self.grid[r][c] == Tile::Empty {
+                    self.empty_pos = (r, c);
+                }
+            }
+        }
+    }
+
     // Check if the puzzle is solved
     fn is_solved(&self) -> bool {
         let mut expected = 1;
@@ -59,11 +79,14 @@ impl Puzzle {
         true
     }
 
-    fn swap_with_empty(&mut self, pt: (usize, usize)) -> bool {
-        let tmp = self.grid[self.empty_pos.0][self.empty_pos.1];
-        self.grid[self.empty_pos.0][self.empty_pos.1] = self.grid[pt.0][pt.1];
-        self.grid[pt.0][pt.1] = tmp;
+    fn swap(&mut self, pt_a: (usize, usize), pt_b: (usize, usize)) -> () {
+        let tmp = self.grid[pt_a.0][pt_a.1];
+        self.grid[pt_a.0][pt_a.1] = self.grid[pt_b.0][pt_b.1];
+        self.grid[pt_b.0][pt_b.1] = tmp;
+    }
 
+    fn swap_with_empty(&mut self, pt: (usize, usize)) -> bool {
+        self.swap(pt, self.empty_pos);
         self.empty_pos = pt;
 
         return true;
@@ -117,6 +140,7 @@ fn main() {
     } else {
         println!("unsolved!");
     }
+    p.scramble();
     let dirs = [
         Direction::Left,
         Direction::Right,
