@@ -39,6 +39,21 @@ impl Puzzle {
         Puzzle { grid, empty_pos }
     }
 
+    fn uniq(&self) -> u64 {
+        let mut res: u64 = 0;
+        for row in 0..SIZE {
+            for col in 0..SIZE {
+                let val = match self.grid[row][col] {
+                    Tile::Number(n) => n,
+                    Tile::Empty => 0
+                };
+                res *= 16;
+                res += val as u64;
+            }
+        }
+        res
+    }
+
     fn scramble(&mut self) -> () {
         let mut rng = rand::thread_rng();
 
@@ -136,7 +151,7 @@ impl fmt::Display for Puzzle {
 fn main() {
     let mut p: Puzzle = Puzzle::new();
     if p.is_solved() {
-        println!("solved!");
+        println!("solved! {}", p.uniq());
     } else {
         println!("unsolved!");
     }
@@ -153,6 +168,6 @@ fn main() {
         println!("slid? {slid}");
         let solved = p.is_solved();
         println!("solved? {solved}");
-        println!("{p}");
+        println!("{p} \n {}", p.uniq());
     }
 }
