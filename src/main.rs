@@ -106,7 +106,7 @@ impl Puzzle {
                     && self.swap_with_empty((self.empty_pos.0 + 1, self.empty_pos.1))
             }
             Direction::Left => {
-                self.empty_pos.0 > 1
+                self.empty_pos.1 > 0
                     && self.swap_with_empty((self.empty_pos.0, self.empty_pos.1 - 1))
             }
             Direction::Right => {
