@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::collections::VecDeque;
 use std::fmt;
 use rand::Rng;
 
@@ -161,13 +162,13 @@ fn invert(d:Direction) -> Direction {
 fn main() {
     let mut visited = HashSet::new();
 
-    let mut p: Puzzle = Puzzle::new();
-    assert!(p.is_solved());
+    let mut p1: Puzzle = Puzzle::new();
+    assert!(p1.is_solved());
 
-    p.scramble();
-    visited.insert(p.uniq());
+    p1.scramble();
+    visited.insert(p1.uniq());
 
-    println!("{p}\n {}", p.uniq());
+    println!("{p1}\n {}", p1.uniq());
 
     let dirs = [
         Direction::Left,
@@ -176,22 +177,31 @@ fn main() {
         Direction::Down,
     ];
 
-    for d in dirs {
-        let slid = p.slide(d);
+    let mut states = VecDeque::new();
+    states.push_back(p1);
 
-        if slid {
-            let u = p.uniq();
-            if !visited.contains(&u) {
-                visited.insert(p.uniq());
+    while states.len() > 0 {
+        let mut p = states.pop_front().unwrap();
+        for d in dirs {
+            let slid = p.slide(d);
 
-                if p.is_solved() {
-                    break;
+            if slid {
+                let u = p.uniq();
+                if !visited.contains(&u) {
+                    visited.insert(p.uniq());
+
+                    if p.is_solved() {
+                        break;
+                    } else {
+                        let np = p.clone();
+                        states.push_back(np);
+                    }
+
+                    println!("{:?}\n {p}\n {}", d, p.uniq());
                 }
 
-                println!("{:?}\n {p}\n {}", d, p.uniq());
+                p.slide(invert(d));
             }
-
-            p.slide(invert(d));
         }
     }
 }
