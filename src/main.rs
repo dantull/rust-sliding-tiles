@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::fmt;
 use rand::Rng;
 
@@ -148,26 +149,49 @@ impl fmt::Display for Puzzle {
     }
 }
 
-fn main() {
-    let mut p: Puzzle = Puzzle::new();
-    if p.is_solved() {
-        println!("solved! {}", p.uniq());
-    } else {
-        println!("unsolved!");
+fn invert(d:Direction) -> Direction {
+    match d {
+        Direction::Down => Direction::Up,
+        Direction::Left => Direction::Right,
+        Direction::Right => Direction::Left,
+        Direction::Up => Direction::Down
     }
+}
+
+fn main() {
+    let mut visited = HashSet::new();
+
+    let mut p: Puzzle = Puzzle::new();
+    assert!(p.is_solved());
+
     p.scramble();
+    visited.insert(p.uniq());
+
+    println!("{p}\n {}", p.uniq());
+
     let dirs = [
         Direction::Left,
         Direction::Right,
         Direction::Up,
         Direction::Down,
     ];
+
     for d in dirs {
         let slid = p.slide(d);
-        println!("{:?}", d);
-        println!("slid? {slid}");
-        let solved = p.is_solved();
-        println!("solved? {solved}");
-        println!("{p} \n {}", p.uniq());
+
+        if slid {
+            let u = p.uniq();
+            if !visited.contains(&u) {
+                visited.insert(p.uniq());
+
+                if p.is_solved() {
+                    break;
+                }
+
+                println!("{:?}\n {p}\n {}", d, p.uniq());
+            }
+
+            p.slide(invert(d));
+        }
     }
 }
