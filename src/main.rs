@@ -17,7 +17,7 @@ enum Direction {
     Right,
 }
 
-const SIZE: usize = 4;
+const SIZE: usize = 3;
 
 #[derive(Debug, Clone, Copy)]
 struct Puzzle {
@@ -139,8 +139,8 @@ impl fmt::Display for Puzzle {
         for row in 0..SIZE {
             for col in 0..SIZE {
                 let _ = match self.grid[row][col] {
-                    Tile::Number(x) => write!(f, "{x:2}  "),
-                    Tile::Empty => write!(f, "<>  ")
+                    Tile::Number(x) => write!(f, "{x:2} "),
+                    Tile::Empty => write!(f, " - ")
                 };
             }
             let _ = write!(f, "\n");
@@ -197,7 +197,7 @@ fn main() {
                         states.push_back(np);
                     }
 
-                    println!("{:?}\n {p}\n {}", d, p.uniq());
+                    println!("{:?}\n{p}\n{}", d, p.uniq());
                 }
 
                 p.slide(invert(d));
