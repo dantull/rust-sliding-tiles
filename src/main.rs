@@ -30,25 +30,20 @@ struct Puzzle {
 const LIMIT: usize = SIZE - 1;
 const MAX: usize = SIZE * SIZE;
 
-fn solved_val(row: usize, col: usize) -> Tile {
-    let val = col + (row * SIZE) + 1;
-    if MAX == val {
-        Tile::Empty
-    } else {
-        Tile::Number(val as u8)
-    }
+fn solved_pos(n: usize) -> (usize, usize) {
+    ((n - 1) / SIZE, (n - 1) % SIZE)
 }
 
 impl Puzzle {
     // Initialize the puzzle
     fn new() -> Self {
         let mut grid = [[Tile::Empty as Tile; SIZE]; SIZE];
-        for row in 0..SIZE {
-            for col in 0..SIZE {
-                grid[row][col] = solved_val(row, col);
-            }
+        for i in 1..MAX {
+            let (row, col) = solved_pos(i);
+            grid[row][col] = Tile::Number(i as u8);
         }
         let empty_pos = (LIMIT, LIMIT);
+        grid[LIMIT][LIMIT] = Tile::Empty;
         let cost = 0; // always zero for a solved state
         Puzzle {
             grid,
@@ -103,16 +98,14 @@ impl Puzzle {
         for row in 0..SIZE {
             for col in 0..SIZE {
                 let actual = self.grid[row][col];
-                let goal = solved_val(row, col);
-
-                let diff = match (actual, goal) {
-                    (Tile::Number(x), Tile::Number(y)) => y.abs_diff(x),
-                    (Tile::Number(x), Tile::Empty) => x,
-                    (Tile::Empty, Tile::Number(y)) => y,
-                    (Tile::Empty, Tile::Empty) => 0
+                let (grow, gcol) = match actual {
+                    Tile::Number(n) => solved_pos(n as usize),
+                    Tile::Empty => (LIMIT, LIMIT),
                 };
 
-                cost += diff as usize;
+                let diff = row.abs_diff(grow) + gcol.abs_diff(col);
+
+                cost += diff;
             }
         }
         cost
@@ -122,7 +115,7 @@ impl Puzzle {
         let tmp = self.grid[pt_a.0][pt_a.1];
         self.grid[pt_a.0][pt_a.1] = self.grid[pt_b.0][pt_b.1];
         self.grid[pt_b.0][pt_b.1] = tmp;
-    
+
         self.cost = self.compute_cost(); // TODO: could probably do this incrementally
     }
 
@@ -203,7 +196,7 @@ fn main() {
     let mut visited = HashSet::new();
 
     let mut p1: Puzzle = Puzzle::new();
-    assert!(p1.is_solved());
+    assert!(p1.cost == p1.compute_cost());
 
     p1.scramble();
     visited.insert(p1.uniq());
