@@ -1,7 +1,8 @@
-use std::collections::HashSet;
-use std::collections::VecDeque;
-use std::fmt;
 use rand::Rng;
+use std::cmp::Ordering;
+use std::collections::BinaryHeap;
+use std::collections::HashSet;
+use std::fmt;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Tile {
@@ -19,10 +20,11 @@ enum Direction {
 
 const SIZE: usize = 3;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct Puzzle {
     grid: [[Tile; SIZE]; SIZE],
-    empty_pos: (usize, usize), // Position of the empty tile
+    empty_pos: (usize, usize),
+    cost: usize,
 }
 
 impl Puzzle {
@@ -38,7 +40,12 @@ impl Puzzle {
         let limit = SIZE - 1;
         let empty_pos = (limit, limit);
         grid[limit][limit] = Tile::Empty;
-        Puzzle { grid, empty_pos }
+        let cost = 0; //
+        Puzzle {
+            grid,
+            empty_pos,
+            cost,
+        }
     }
 
     fn uniq(&self) -> u64 {
@@ -47,7 +54,7 @@ impl Puzzle {
             for col in 0..SIZE {
                 let val = match self.grid[row][col] {
                     Tile::Number(n) => n,
-                    Tile::Empty => 0
+                    Tile::Empty => 0,
                 };
                 res *= 16;
                 res += val as u64;
@@ -140,7 +147,7 @@ impl fmt::Display for Puzzle {
             for col in 0..SIZE {
                 let _ = match self.grid[row][col] {
                     Tile::Number(x) => write!(f, "{x:2} "),
-                    Tile::Empty => write!(f, " - ")
+                    Tile::Empty => write!(f, " - "),
                 };
             }
             let _ = write!(f, "\n");
@@ -150,12 +157,28 @@ impl fmt::Display for Puzzle {
     }
 }
 
-fn invert(d:Direction) -> Direction {
+impl Ord for Puzzle {
+    fn cmp(&self, other: &Self) -> Ordering {
+        // invert ordering and use uniq id to break ties
+        other
+            .cost
+            .cmp(&self.cost)
+            .then_with(|| self.uniq().cmp(&other.uniq()))
+    }
+}
+
+impl PartialOrd for Puzzle {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+fn invert(d: Direction) -> Direction {
     match d {
         Direction::Down => Direction::Up,
         Direction::Left => Direction::Right,
         Direction::Right => Direction::Left,
-        Direction::Up => Direction::Down
+        Direction::Up => Direction::Down,
     }
 }
 
@@ -177,11 +200,11 @@ fn main() {
         Direction::Down,
     ];
 
-    let mut states = VecDeque::new();
-    states.push_back(p1);
+    let mut states = BinaryHeap::new();
+    states.push(p1);
 
     while states.len() > 0 {
-        let mut p = states.pop_front().unwrap();
+        let mut p = states.pop().unwrap();
         for d in dirs {
             let slid = p.slide(d);
 
@@ -194,7 +217,7 @@ fn main() {
                         break;
                     } else {
                         let np = p.clone();
-                        states.push_back(np);
+                        states.push(np);
                     }
 
                     println!("{:?}\n{p}\n{}", d, p.uniq());
