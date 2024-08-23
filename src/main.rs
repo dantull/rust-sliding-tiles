@@ -68,6 +68,8 @@ impl Puzzle {
     }
 
     fn scramble(&mut self) -> () {
+        // FIXME: this can produce unsolvable puzzles!
+        // Some kinds of position inversions can't be fixed
         let mut rng = rand::thread_rng();
 
         for row in 0..SIZE {
