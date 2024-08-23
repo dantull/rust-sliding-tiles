@@ -27,20 +27,29 @@ struct Puzzle {
     cost: usize,
 }
 
+const LIMIT: usize = SIZE - 1;
+const MAX: usize = SIZE * SIZE;
+
+fn solved_val(row: usize, col: usize) -> Tile {
+    let val = col + (row * SIZE) + 1;
+    if MAX == val {
+        Tile::Empty
+    } else {
+        Tile::Number(val as u8)
+    }
+}
+
 impl Puzzle {
     // Initialize the puzzle
     fn new() -> Self {
         let mut grid = [[Tile::Empty as Tile; SIZE]; SIZE];
         for row in 0..SIZE {
             for col in 0..SIZE {
-                let val = col + (row * SIZE) + 1;
-                grid[row][col] = Tile::Number(val as u8);
+                grid[row][col] = solved_val(row, col);
             }
         }
-        let limit = SIZE - 1;
-        let empty_pos = (limit, limit);
-        grid[limit][limit] = Tile::Empty;
-        let cost = 0; //
+        let empty_pos = (LIMIT, LIMIT);
+        let cost = 0; // always zero for a solved state
         Puzzle {
             grid,
             empty_pos,
@@ -84,29 +93,37 @@ impl Puzzle {
 
     // Check if the puzzle is solved
     fn is_solved(&self) -> bool {
-        let mut expected = 1;
+        self.cost == 0
+    }
+
+    // FIXME: cost function should be based on distance, not magnitude
+    // and also maybe weight for proximity of mismatches to Empty pos
+    fn compute_cost(&self) -> usize {
+        let mut cost = 0;
         for row in 0..SIZE {
             for col in 0..SIZE {
                 let actual = self.grid[row][col];
-                if actual
-                    != if expected < SIZE * SIZE {
-                        Tile::Number(expected as u8)
-                    } else {
-                        Tile::Empty
-                    }
-                {
-                    return false;
-                }
-                expected += 1;
+                let goal = solved_val(row, col);
+
+                let diff = match (actual, goal) {
+                    (Tile::Number(x), Tile::Number(y)) => y.abs_diff(x),
+                    (Tile::Number(x), Tile::Empty) => x,
+                    (Tile::Empty, Tile::Number(y)) => y,
+                    (Tile::Empty, Tile::Empty) => 0
+                };
+
+                cost += diff as usize;
             }
         }
-        true
+        cost
     }
 
     fn swap(&mut self, pt_a: (usize, usize), pt_b: (usize, usize)) -> () {
         let tmp = self.grid[pt_a.0][pt_a.1];
         self.grid[pt_a.0][pt_a.1] = self.grid[pt_b.0][pt_b.1];
         self.grid[pt_b.0][pt_b.1] = tmp;
+    
+        self.cost = self.compute_cost(); // TODO: could probably do this incrementally
     }
 
     fn swap_with_empty(&mut self, pt: (usize, usize)) -> bool {
@@ -205,25 +222,32 @@ fn main() {
 
     while states.len() > 0 {
         let mut p = states.pop().unwrap();
+
+        let from = p.uniq();
+        println!("popped: {from}");
+
         for d in dirs {
             let slid = p.slide(d);
 
             if slid {
-                let u = p.uniq();
-                if !visited.contains(&u) {
+                let to = p.uniq();
+                if !visited.contains(&to) {
                     visited.insert(p.uniq());
 
-                    if p.is_solved() {
-                        break;
-                    } else {
+                    let solved = p.is_solved();
+                    if !solved {
                         let np = p.clone();
                         states.push(np);
                     }
 
-                    println!("{:?}\n{p}\n{}", d, p.uniq());
+                    println!("{from} + {:?} -> {to} ({})\n{p}", d, p.cost);
+                    if solved {
+                        println!("solved!");
+                        return;
+                    }
                 }
 
-                p.slide(invert(d));
+                assert!(p.slide(invert(d)));
             }
         }
     }
