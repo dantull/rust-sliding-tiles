@@ -1,3 +1,4 @@
+use pico_args;
 use rand::{rngs::StdRng, Rng, SeedableRng};
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
@@ -256,9 +257,48 @@ fn solve<T: Write>(out:&mut T, scramble:u8, seed: u64) -> Result<bool, Error> {
     Ok(false)
 }
 
+#[derive(Debug)]
+struct AppArgs {
+    moves: u8,
+    seed: u64,
+}
+
+fn parse_moves(s: &str) -> Result<u8, &'static str> {
+    s.parse().map_err(|_| "moves not a number")
+}
+
+fn parse_seed(s: &str) -> Result<u64, &'static str> {
+    s.parse().map_err(|_| "seed not a number")
+}
+
+fn parse_args() -> Result<AppArgs, pico_args::Error> {
+    let mut pargs = pico_args::Arguments::from_env();
+
+    let args = AppArgs {
+        moves: pargs.opt_value_from_fn("--moves", parse_moves)?.unwrap_or(255),
+        seed: pargs.opt_value_from_fn("--seed", parse_seed)?.unwrap_or(0),
+    };
+
+    // It's up to the caller what to do with the remaining arguments.
+    let remaining = pargs.finish();
+    if !remaining.is_empty() {
+        eprintln!("Warning: unused arguments left: {:?}.", remaining);
+    }
+
+    Ok(args)
+}
+
 fn main() -> ExitCode {
     let mut out = std::io::stdout().lock();
-    let res = solve(&mut out, 255, 0);
+    let args = match parse_args() {
+        Ok(args) => args,
+        Err(e) => {
+            let _ = writeln!(out, "invalid arguments: {}", e);
+            return ExitCode::FAILURE
+        }
+    };
+
+    let res = solve(&mut out, args.moves, args.seed);
 
     match res {
         Ok(false) => ExitCode::FAILURE,
