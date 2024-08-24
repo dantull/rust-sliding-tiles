@@ -1,4 +1,4 @@
-use rand::Rng;
+use rand::{rngs::StdRng, Rng, SeedableRng};
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 use std::collections::HashSet;
@@ -86,8 +86,8 @@ impl Puzzle {
         res
     }
 
-    fn scramble(&mut self, amount:u8) -> () {
-        let mut rng = rand::thread_rng();
+    fn scramble(&mut self, amount:u8, seed: u64) -> () {
+        let mut rng = StdRng::seed_from_u64(seed);
         let mut previous = None;
 
         let mut moves = 0;
@@ -207,13 +207,13 @@ impl PartialOrd for Puzzle {
 //     s410142 -> s410141
 // }
 
-fn solve<T: Write>(out:&mut T) -> Result<bool, Error> {
+fn solve<T: Write>(out:&mut T, scramble:u8, seed: u64) -> Result<bool, Error> {
     let mut visited = HashSet::new();
 
     let mut p1: Puzzle = Puzzle::new();
     assert!(p1.cost == p1.compute_cost());
 
-    p1.scramble(255);
+    p1.scramble(scramble, seed);
     visited.insert(p1.uniq());
 
     writeln!(out, "{p1}\n {} ({})", p1.uniq(), p1.cost)?;
@@ -258,7 +258,7 @@ fn solve<T: Write>(out:&mut T) -> Result<bool, Error> {
 
 fn main() -> ExitCode {
     let mut out = std::io::stdout().lock();
-    let res = solve(&mut out);
+    let res = solve(&mut out, 255, 0);
 
     match res {
         Ok(false) => ExitCode::FAILURE,
