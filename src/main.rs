@@ -87,7 +87,7 @@ impl Puzzle {
         res
     }
 
-    fn scramble(&mut self, amount:u8, seed: u64) -> () {
+    fn scramble(&mut self, amount: u8, seed: u64) -> () {
         let mut rng = StdRng::seed_from_u64(seed);
         let mut previous = None;
 
@@ -205,7 +205,7 @@ impl PartialOrd for Puzzle {
     }
 }
 
-fn solve<T: Write>(out:&mut T, scramble:u8, seed: u64) -> Result<bool, Error> {
+fn solve<T: Write>(out: &mut T, scramble: u8, seed: u64) -> Result<bool, Error> {
     let mut visited = HashSet::new();
 
     let mut p1: Puzzle = Puzzle::new();
@@ -236,11 +236,7 @@ fn solve<T: Write>(out:&mut T, scramble:u8, seed: u64) -> Result<bool, Error> {
                     visited.insert(p.uniq());
 
                     let solved = p.is_solved();
-                    let color = if solved {
-                        "red"
-                    } else {
-                        "black"
-                    };
+                    let color = if solved { "red" } else { "black" };
 
                     writeln!(out, "\ts{to} [label=\"{p}\" color=\"{color}\"];")?;
 
@@ -281,7 +277,9 @@ fn parse_args() -> Result<AppArgs, pico_args::Error> {
     let mut pargs = pico_args::Arguments::from_env();
 
     let args = AppArgs {
-        moves: pargs.opt_value_from_fn("--moves", parse_moves)?.unwrap_or(255),
+        moves: pargs
+            .opt_value_from_fn("--moves", parse_moves)?
+            .unwrap_or(255),
         seed: pargs.opt_value_from_fn("--seed", parse_seed)?.unwrap_or(0),
     };
 
@@ -300,7 +298,7 @@ fn main() -> ExitCode {
         Ok(args) => args,
         Err(e) => {
             let _ = writeln!(out, "invalid arguments: {}", e);
-            return ExitCode::FAILURE
+            return ExitCode::FAILURE;
         }
     };
 
@@ -309,6 +307,6 @@ fn main() -> ExitCode {
     match res {
         Ok(false) => ExitCode::FAILURE,
         Ok(true) => ExitCode::SUCCESS,
-        _ => ExitCode::FAILURE
+        _ => ExitCode::FAILURE,
     }
 }
