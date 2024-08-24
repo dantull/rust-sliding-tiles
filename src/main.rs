@@ -10,12 +10,28 @@ enum Tile {
     Number(u8),
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Direction {
     Up,
     Down,
     Left,
     Right,
+}
+
+const ALL_DIRS:[Direction; 4] = [
+    Direction::Left,
+    Direction::Right,
+    Direction::Up,
+    Direction::Down,
+];
+
+fn invert(d: Direction) -> Direction {
+    match d {
+        Direction::Down => Direction::Up,
+        Direction::Left => Direction::Right,
+        Direction::Right => Direction::Left,
+        Direction::Up => Direction::Down,
+    }
 }
 
 const SIZE: usize = 3;
@@ -67,23 +83,18 @@ impl Puzzle {
         res
     }
 
-    fn scramble(&mut self) -> () {
-        // FIXME: this can produce unsolvable puzzles!
-        // Some kinds of position inversions can't be fixed
+    fn scramble(&mut self, amount:u8) -> () {
         let mut rng = rand::thread_rng();
+        let mut previous = None;
 
-        for row in 0..SIZE {
-            for col in 0..SIZE {
-                let r: usize = rng.gen::<usize>() % SIZE;
-                let c: usize = rng.gen::<usize>() % SIZE;
+        let mut moves = 0;
+        while moves < amount {
+            let di: usize = rng.gen::<usize>() % ALL_DIRS.len();
+            let d = ALL_DIRS[di];
 
-                self.swap((row, col), (r, c));
-
-                if self.grid[row][col] == Tile::Empty {
-                    self.empty_pos = (row, col);
-                } else if self.grid[r][c] == Tile::Empty {
-                    self.empty_pos = (r, c);
-                }
+            if Some(d) != previous && self.slide(d) {
+                previous = Some(d);
+                moves += 1;
             }
         }
     }
@@ -183,32 +194,16 @@ impl PartialOrd for Puzzle {
     }
 }
 
-fn invert(d: Direction) -> Direction {
-    match d {
-        Direction::Down => Direction::Up,
-        Direction::Left => Direction::Right,
-        Direction::Right => Direction::Left,
-        Direction::Up => Direction::Down,
-    }
-}
-
 fn main() {
     let mut visited = HashSet::new();
 
     let mut p1: Puzzle = Puzzle::new();
     assert!(p1.cost == p1.compute_cost());
 
-    p1.scramble();
+    p1.scramble(255);
     visited.insert(p1.uniq());
 
-    println!("{p1}\n {}", p1.uniq());
-
-    let dirs = [
-        Direction::Left,
-        Direction::Right,
-        Direction::Up,
-        Direction::Down,
-    ];
+    println!("{p1}\n {} ({})", p1.uniq(), p1.cost);
 
     let mut states = BinaryHeap::new();
     states.push(p1);
@@ -219,7 +214,7 @@ fn main() {
         let from = p.uniq();
         println!("popped: {from}");
 
-        for d in dirs {
+        for d in ALL_DIRS {
             let slid = p.slide(d);
 
             if slid {
