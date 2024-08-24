@@ -22,7 +22,7 @@ enum Direction {
     Right,
 }
 
-const ALL_DIRS:[Direction; 4] = [
+const ALL_DIRS: [Direction; 4] = [
     Direction::Left,
     Direction::Right,
     Direction::Up,
@@ -168,14 +168,21 @@ impl Puzzle {
 
 impl fmt::Display for Puzzle {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for row in 0..SIZE {
-            for col in 0..SIZE {
-                let _ = match self.grid[row][col] {
-                    Tile::Number(x) => write!(f, "{x:2} "),
-                    Tile::Empty => write!(f, " - "),
+        for col in 0..SIZE {
+            if col > 0 {
+                write!(f, "|")?;
+            }
+            write!(f, "{{")?;
+            for row in 0..SIZE {
+                if row > 0 {
+                    write!(f, "|")?;
+                }
+                match self.grid[row][col] {
+                    Tile::Number(x) => write!(f, "{x}")?,
+                    Tile::Empty => write!(f, "")?,
                 };
             }
-            let _ = write!(f, "\n");
+            write!(f, "}}")?;
         }
 
         Ok(())
@@ -198,16 +205,6 @@ impl PartialOrd for Puzzle {
     }
 }
 
-// Output format idea:
-//
-// digraph structs {
-//     node [shape=record];
-//     s410141 [label="{1|4|7}|{2|5|8}|{3|6|}}"color="blue"];
-//     s410142 [label="{1|4|7}|{2|5|}|{3|6|8}}"];
-//     s410141 -> s410142
-//     s410142 -> s410141
-// }
-
 fn solve<T: Write>(out:&mut T, scramble:u8, seed: u64) -> Result<bool, Error> {
     let mut visited = HashSet::new();
 
@@ -217,7 +214,9 @@ fn solve<T: Write>(out:&mut T, scramble:u8, seed: u64) -> Result<bool, Error> {
     p1.scramble(scramble, seed);
     visited.insert(p1.uniq());
 
-    writeln!(out, "{p1}\n {} ({})", p1.uniq(), p1.cost)?;
+    writeln!(out, "digraph structs {{")?;
+    writeln!(out, "\tnode [shape=record];")?;
+    writeln!(out, "\ts{} [label=\"{p1}\" color=\"blue\"];", p1.uniq())?;
 
     let mut states = BinaryHeap::new();
     states.push(p1);
@@ -226,25 +225,32 @@ fn solve<T: Write>(out:&mut T, scramble:u8, seed: u64) -> Result<bool, Error> {
         let mut p = states.pop().unwrap();
 
         let from = p.uniq();
-        writeln!(out, "popped: {from}")?;
 
         for d in ALL_DIRS {
             let slid = p.slide(d);
 
             if slid {
                 let to = p.uniq();
+                writeln!(out, "\ts{from} -> s{to};")?;
                 if !visited.contains(&to) {
                     visited.insert(p.uniq());
 
                     let solved = p.is_solved();
+                    let color = if solved {
+                        "red"
+                    } else {
+                        "black"
+                    };
+
+                    writeln!(out, "\ts{to} [label=\"{p}\" color=\"{color}\"];")?;
+
                     if !solved {
                         let np = p.clone();
                         states.push(np);
                     }
 
-                    writeln!(out, "{from} + {:?} -> {to} ({})\n{p}", d, p.cost)?;
                     if solved {
-                        writeln!(out, "solved! ({} explored, {} remaining)", visited.len(), states.len())?;
+                        writeln!(out, "}}")?;
                         return Ok(true);
                     }
                 }
