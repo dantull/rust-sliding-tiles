@@ -240,7 +240,7 @@ fn main() {
 
                     println!("{from} + {:?} -> {to} ({})\n{p}", d, p.cost);
                     if solved {
-                        println!("solved!");
+                        println!("solved! ({} explored, {} remaining)", visited.len(), states.len());
                         return;
                     }
                 }
