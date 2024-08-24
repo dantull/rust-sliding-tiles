@@ -3,6 +3,9 @@ use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 use std::collections::HashSet;
 use std::fmt;
+use std::io::Error;
+use std::io::Write;
+use std::process::ExitCode;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Tile {
@@ -204,7 +207,7 @@ impl PartialOrd for Puzzle {
 //     s410142 -> s410141
 // }
 
-fn main() {
+fn solve<T: Write>(out:&mut T) -> Result<bool, Error> {
     let mut visited = HashSet::new();
 
     let mut p1: Puzzle = Puzzle::new();
@@ -213,7 +216,7 @@ fn main() {
     p1.scramble(255);
     visited.insert(p1.uniq());
 
-    println!("{p1}\n {} ({})", p1.uniq(), p1.cost);
+    writeln!(out, "{p1}\n {} ({})", p1.uniq(), p1.cost)?;
 
     let mut states = BinaryHeap::new();
     states.push(p1);
@@ -222,7 +225,7 @@ fn main() {
         let mut p = states.pop().unwrap();
 
         let from = p.uniq();
-        println!("popped: {from}");
+        writeln!(out, "popped: {from}")?;
 
         for d in ALL_DIRS {
             let slid = p.slide(d);
@@ -238,15 +241,28 @@ fn main() {
                         states.push(np);
                     }
 
-                    println!("{from} + {:?} -> {to} ({})\n{p}", d, p.cost);
+                    writeln!(out, "{from} + {:?} -> {to} ({})\n{p}", d, p.cost)?;
                     if solved {
-                        println!("solved! ({} explored, {} remaining)", visited.len(), states.len());
-                        return;
+                        writeln!(out, "solved! ({} explored, {} remaining)", visited.len(), states.len())?;
+                        return Ok(true);
                     }
                 }
 
                 assert!(p.slide(invert(d)));
             }
         }
+    }
+
+    Ok(false)
+}
+
+fn main() -> ExitCode {
+    let mut out = std::io::stdout().lock();
+    let res = solve(&mut out);
+
+    match res {
+        Ok(false) => ExitCode::FAILURE,
+        Ok(true) => ExitCode::SUCCESS,
+        _ => ExitCode::FAILURE
     }
 }
