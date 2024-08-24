@@ -194,6 +194,16 @@ impl PartialOrd for Puzzle {
     }
 }
 
+// Output format idea:
+//
+// digraph structs {
+//     node [shape=record];
+//     s410141 [label="{1|4|7}|{2|5|8}|{3|6|}}"color="blue"];
+//     s410142 [label="{1|4|7}|{2|5|}|{3|6|8}}"];
+//     s410141 -> s410142
+//     s410142 -> s410141
+// }
+
 fn main() {
     let mut visited = HashSet::new();
 
