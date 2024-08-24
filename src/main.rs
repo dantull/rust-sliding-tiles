@@ -93,8 +93,6 @@ impl Puzzle {
         self.cost == 0
     }
 
-    // FIXME: cost function should be based on distance, not magnitude
-    // and also maybe weight for proximity of mismatches to Empty pos
     fn compute_cost(&self) -> usize {
         let mut cost = 0;
         for row in 0..SIZE {
