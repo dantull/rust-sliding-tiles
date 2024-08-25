@@ -2,7 +2,7 @@ use pico_args;
 use rand::{rngs::StdRng, Rng, SeedableRng};
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
-use std::collections::HashSet;
+use std::collections::HashMap;
 use std::fmt;
 use std::io::Error;
 use std::io::Write;
@@ -206,13 +206,16 @@ impl PartialOrd for Puzzle {
 }
 
 fn solve<T: Write>(out: &mut T, scramble: u8, seed: u64) -> Result<bool, Error> {
-    let mut visited = HashSet::new();
+    let mut visited = HashMap::new();
 
     let mut p1: Puzzle = Puzzle::new();
     assert!(p1.cost == p1.compute_cost());
 
     p1.scramble(scramble, seed);
-    visited.insert(p1.uniq());
+    visited.insert(
+        p1.uniq(),
+        (None as Option<Direction>, 0 as usize, None as Option<u64>),
+    );
 
     writeln!(out, "digraph structs {{")?;
     writeln!(out, "\tnode [shape=record];")?;
@@ -225,6 +228,8 @@ fn solve<T: Write>(out: &mut T, scramble: u8, seed: u64) -> Result<bool, Error> 
         let mut p = states.pop().unwrap();
 
         let from = p.uniq();
+        let (_, depth, _) = visited.get(&from).unwrap();
+        let next = depth + 1;
 
         for d in ALL_DIRS {
             let slid = p.slide(d);
@@ -232,9 +237,15 @@ fn solve<T: Write>(out: &mut T, scramble: u8, seed: u64) -> Result<bool, Error> 
             if slid {
                 let to = p.uniq();
                 writeln!(out, "\ts{from} -> s{to};")?;
-                if !visited.contains(&to) {
-                    visited.insert(p.uniq());
+                let entry = visited.get(&to);
+                let new = entry.is_none();
 
+                // update with shortest path if we've rediscovered a new route to a node
+                if new || entry.unwrap().1 > next {
+                    visited.insert(to, (Some(d), next, Some(from)));
+                }
+
+                if new {
                     let solved = p.is_solved();
                     let color = if solved { "red" } else { "black" };
 
