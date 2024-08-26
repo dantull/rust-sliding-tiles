@@ -205,6 +205,26 @@ impl PartialOrd for Puzzle {
     }
 }
 
+struct SolutionLink {
+    depth: usize,
+    from: Option<u64>,
+    dir: Option<Direction>,
+}
+
+fn trace<T: Write>(out: &mut T, visited: HashMap<u64, SolutionLink>, start: u64) -> () {
+    let entry = visited.get(&start);
+    match entry {
+        Some(link) => {
+            let _ = writeln!(out, "\t// {} {:?} s{}", link.depth, link.dir, start);
+            match link.from {
+                Some(id) => trace(out, visited, id),
+                None => ()
+            }
+        },
+        None => ()
+    }
+}
+
 fn solve<T: Write>(out: &mut T, scramble: u8, seed: u64) -> Result<bool, Error> {
     let mut visited = HashMap::new();
 
@@ -214,7 +234,11 @@ fn solve<T: Write>(out: &mut T, scramble: u8, seed: u64) -> Result<bool, Error> 
     p1.scramble(scramble, seed);
     visited.insert(
         p1.uniq(),
-        (None as Option<Direction>, 0 as usize, None as Option<u64>),
+        SolutionLink {
+            depth: 0,
+            from: None,
+            dir: None,
+        },
     );
 
     writeln!(out, "digraph structs {{")?;
@@ -228,8 +252,8 @@ fn solve<T: Write>(out: &mut T, scramble: u8, seed: u64) -> Result<bool, Error> 
         let mut p = states.pop().unwrap();
 
         let from = p.uniq();
-        let (_, depth, _) = visited.get(&from).unwrap();
-        let next = depth + 1;
+        let link = visited.get(&from).unwrap();
+        let next = link.depth + 1;
 
         for d in ALL_DIRS {
             let slid = p.slide(d);
@@ -241,8 +265,15 @@ fn solve<T: Write>(out: &mut T, scramble: u8, seed: u64) -> Result<bool, Error> 
                 let new = entry.is_none();
 
                 // update with shortest path if we've rediscovered a new route to a node
-                if new || entry.unwrap().1 > next {
-                    visited.insert(to, (Some(d), next, Some(from)));
+                if new || entry.unwrap().depth > next {
+                    visited.insert(
+                        to,
+                        SolutionLink {
+                            depth: next,
+                            from: Some(from),
+                            dir: Some(d),
+                        },
+                    );
                 }
 
                 if new {
@@ -257,6 +288,7 @@ fn solve<T: Write>(out: &mut T, scramble: u8, seed: u64) -> Result<bool, Error> 
                     }
 
                     if solved {
+                        trace(out, visited, to);
                         writeln!(out, "}}")?;
                         return Ok(true);
                     }
