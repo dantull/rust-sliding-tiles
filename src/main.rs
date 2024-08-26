@@ -217,7 +217,11 @@ fn trace<T: Write>(out: &mut T, visited: HashMap<u64, SolutionLink>, start: u64)
         Some(link) => {
             let _ = writeln!(out, "\t// {} {:?} s{}", link.depth, link.dir, start);
             match link.from {
-                Some(id) => trace(out, visited, id),
+                Some(id) => {
+                    let _ = writeln!(out, "\ts{id} -> s{start} [color=\"green\"];");
+
+                    trace(out, visited, id)
+                },
                 None => ()
             }
         },
