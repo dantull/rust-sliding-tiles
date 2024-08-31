@@ -207,26 +207,29 @@ impl PartialOrd for Puzzle {
 
 struct SolutionLink {
     depth: usize,
-    from: Option<u64>,
-    dir: Option<Direction>,
+    step: Option<(u64, Direction)>,
 }
 
-fn trace<T: Write>(out: &mut T, visited: HashMap<u64, SolutionLink>, start: u64) -> () {
-    let entry = visited.get(&start);
-    match entry {
-        Some(link) => {
-            let _ = writeln!(out, "\t// {} {:?} s{}", link.depth, link.dir, start);
-            match link.from {
-                Some(id) => {
-                    let _ = writeln!(out, "\ts{id} -> s{start} [color=\"green\"];");
-
-                    trace(out, visited, id)
-                },
-                None => ()
-            }
-        },
-        None => ()
+fn collect(visited: HashMap<u64, SolutionLink>, start: u64) -> Vec<(u64, Direction)> {
+    let mut next = start;
+    let mut path = vec![];
+    loop {
+        let entry = visited.get(&next);
+        match entry {
+            Some(link) => {
+                match link.step {
+                    Some(step) => {
+                        next = step.0;
+                        path.push(step);
+                    },
+                    None => break
+                }
+            },
+            None => break
+        }
     }
+
+    return path
 }
 
 fn solve<T: Write>(out: &mut T, scramble: u8, seed: u64) -> Result<bool, Error> {
@@ -240,8 +243,7 @@ fn solve<T: Write>(out: &mut T, scramble: u8, seed: u64) -> Result<bool, Error> 
         p1.uniq(),
         SolutionLink {
             depth: 0,
-            from: None,
-            dir: None,
+            step: None,
         },
     );
 
@@ -274,8 +276,7 @@ fn solve<T: Write>(out: &mut T, scramble: u8, seed: u64) -> Result<bool, Error> 
                         to,
                         SolutionLink {
                             depth: next,
-                            from: Some(from),
-                            dir: Some(d),
+                            step: Some((from, d)),
                         },
                     );
                 }
@@ -292,7 +293,12 @@ fn solve<T: Write>(out: &mut T, scramble: u8, seed: u64) -> Result<bool, Error> 
                     }
 
                     if solved {
-                        trace(out, visited, to);
+                        let path = collect(visited, to);
+                        let mut prev = to;
+                        for p in path {
+                            writeln!(out, "\ts{} -> s{prev} [color=\"green\"]; // {:?}", p.0, p.1)?;
+                            prev = p.0;
+                        }
                         writeln!(out, "}}")?;
                         return Ok(true);
                     }
