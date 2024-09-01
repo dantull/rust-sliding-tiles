@@ -216,20 +216,18 @@ fn collect(visited: HashMap<u64, SolutionLink>, start: u64) -> Vec<(u64, Directi
     loop {
         let entry = visited.get(&next);
         match entry {
-            Some(link) => {
-                match link.step {
-                    Some(step) => {
-                        next = step.0;
-                        path.push(step);
-                    },
-                    None => break
+            Some(link) => match link.step {
+                Some(step) => {
+                    next = step.0;
+                    path.push(step);
                 }
+                None => break,
             },
-            None => break
+            None => break,
         }
     }
 
-    return path
+    return path;
 }
 
 fn solve<T: Write>(out: &mut T, scramble: u8, seed: u64) -> Result<bool, Error> {
