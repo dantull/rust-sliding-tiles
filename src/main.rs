@@ -3,6 +3,7 @@ use rand::{rngs::StdRng, Rng, SeedableRng};
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::fmt;
 use std::io::Error;
 use std::io::Write;
@@ -89,15 +90,20 @@ impl Puzzle {
 
     fn scramble(&mut self, amount: u8, seed: u64) -> () {
         let mut rng = StdRng::seed_from_u64(seed);
-        let mut previous = None;
+        let mut visited = HashSet::new();
 
         let mut moves = 0;
         while moves < amount {
             let di: usize = rng.gen::<usize>() % ALL_DIRS.len();
             let d = ALL_DIRS[di];
 
-            if Some(d) != previous && self.slide(d) {
-                previous = Some(d);
+            if self.slide(d) {
+                let u = self.uniq();
+                if visited.contains(&u) {
+                    self.slide(invert(d));
+                } else {
+                    visited.insert(u);
+                }
                 moves += 1;
             }
         }
