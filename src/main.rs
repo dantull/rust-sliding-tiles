@@ -1,4 +1,3 @@
-use pico_args;
 use rand::{rngs::StdRng, Rng, SeedableRng};
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
@@ -88,7 +87,7 @@ impl Puzzle {
         res
     }
 
-    fn scramble(&mut self, amount: u8, seed: u64) -> () {
+    fn scramble(&mut self, amount: u8, seed: u64) {
         let mut rng = StdRng::seed_from_u64(seed);
         let mut visited = HashSet::new();
 
@@ -132,7 +131,7 @@ impl Puzzle {
         cost
     }
 
-    fn swap(&mut self, pt_a: (usize, usize), pt_b: (usize, usize)) -> () {
+    fn swap(&mut self, pt_a: (usize, usize), pt_b: (usize, usize)) {
         let tmp = self.grid[pt_a.0][pt_a.1];
         self.grid[pt_a.0][pt_a.1] = self.grid[pt_b.0][pt_b.1];
         self.grid[pt_b.0][pt_b.1] = tmp;
@@ -144,7 +143,7 @@ impl Puzzle {
         self.swap(pt, self.empty_pos);
         self.empty_pos = pt;
 
-        return true;
+        true
     }
 
     // Implement sliding moves
@@ -233,7 +232,7 @@ fn collect(visited: HashMap<u64, SolutionLink>, start: u64) -> Vec<(u64, Directi
         }
     }
 
-    return path;
+    path
 }
 
 fn solve<T: Write>(out: &mut T, scramble: u8, seed: u64) -> Result<bool, Error> {
@@ -258,7 +257,7 @@ fn solve<T: Write>(out: &mut T, scramble: u8, seed: u64) -> Result<bool, Error> 
     let mut states = BinaryHeap::new();
     states.push(p1);
 
-    while states.len() > 0 {
+    while !states.is_empty() {
         let mut p = states.pop().unwrap();
 
         let from = p.uniq();
@@ -292,7 +291,7 @@ fn solve<T: Write>(out: &mut T, scramble: u8, seed: u64) -> Result<bool, Error> 
                     writeln!(out, "\ts{to} [label=\"{p}\" color=\"{color}\"];")?;
 
                     if !solved {
-                        let np = p.clone();
+                        let np = p;
                         states.push(np);
                     }
 
